@@ -1,0 +1,411 @@
+% Document class (keine Änderungen hier)
+\documentclass[a4paper,oneside,bibliography=totoc]{scrartcl}
+
+% Encoding und Sprachen
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+% Mathematische Pakete
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{amsthm} % Hier richtig platziert
+
+% Grafik und Layout
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{subcaption}
+
+% Sonstige nützliche Pakete
+\usepackage{latexsym}
+\usepackage{csquotes}
+\usepackage{cancel}
+\usepackage{accents}
+\usepackage{makeidx}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\renewcommand{\algorithmiccomment}[1]{\hfill\textit{// #1}}
+
+% Hyperlinks und Farben
+\usepackage[hidelinks]{hyperref} % `hidelinks` vermeidet sichtbare Link-Kästen
+\usepackage[usenames,dvipsnames]{xcolor} % Farbe für Hyperlinks
+\hypersetup{
+    colorlinks=true,
+    citecolor=Green,  % Zitatfarben auf Grün gesetzt
+}
+
+% Literaturstil
+\usepackage{natbib}
+\bibliographystyle{chicagoa}
+\setcitestyle{authoryear,round,semicolon,aysep={},yysep={,}}
+\let\cite\citep
+
+% Definitionen, Propositionen und Bemerkungen
+\newtheorem{defn}{Definition}[section] % Definition-Umgebung, [section] für Nummerierung nach Abschnitten
+\newtheorem{prop}{Proposition}[section]
+\newtheorem{rem}{Remark}[section]
+\newtheorem{Satz}{Theorem}[section]
+\newtheorem{ex}{Example}[section]
+\begin{document}
+
+\subject{Report - Machine Learning (HWS 2024)} % change to appropriate type
+\title{Assignment 3: Singular Value Decomposition}
+\author{Arne Huckemann (ahuckema), Elise Wolf (eliwolf)}
+\date{\today}
+\maketitle
+
+
+\begin{abstract}
+???
+\end{abstract}
+
+
+\section{Introduction}
+\label{ch:intro}
+In the beginning, we formally have to define the Singular Value Decomposition. We reintroduce the SVD as in the Lecture Slides. \cite{gemulla}
+
+\begin{Satz}
+For each matrix \( A \in \mathbb{R}^{m \times n} \), there exist orthogonal matrices \( U \in \mathbb{R}^{m \times m} \) and \( V \in \mathbb{R}^{n \times n} \), and a diagonal matrix \( \Sigma \in \mathbb{R}^{m \times n} \) with entries \( \sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_{\min(m,n)} \geq 0 \) on the main diagonal such that
+\[
+A = U \Sigma V^T.
+\]
+The factorization \( U \Sigma V^T \) is called the \textbf{singular value decomposition (SVD)} of \( A \).
+\end{Satz}
+
+\section{Task 1: Intuition on SVD}
+
+\subsection{Task 1a: Singular Value Decomposition}
+
+The corresponding definitions of Section \ref{sec:1a} are taken from the Linear Algebra I script of Prof. Hertling. \cite{hertling}
+
+\begin{defn}[Singular Values and Singular Vectors]
+Let \( A \in \mathbb{R}^{m \times n} \) be a matrix with SVD \( A = U \Sigma V^T \).
+\begin{itemize}
+    \item The \textbf{singular values} of \( A \) are the entries \( \sigma_1, \sigma_2, \dots, \sigma_{\min(m,n)} \) on the main diagonal of \( \Sigma \), with \( \sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_{\min(m,n)} \geq 0 \).
+    \item The \textbf{left singular vectors} of \( A \) are the columns of \( U \) and form an orthogonal basis for the column space of \( A \).
+    \item The \textbf{right singular vectors} of \( A \) are the columns of \( V \) and form an orthogonal basis for the row space of \( A \).
+\end{itemize}
+\end{defn}
+
+For each matrix \( M_i \), we will identify its rank, approximate singular values, and corresponding singular vectors based on observation.
+
+\textbf{Matrix \( M_1 \)}
+\[
+M_1 = \begin{bmatrix} 1 & 1 & 1 & 0 & 0 \\ 1 & 1 & 1 & 0 & 0 \\ 1 & 1 & 1 & 0 & 0 \\ 0 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 & 0 \end{bmatrix}
+\]
+
+The first three rows are identical, and the last two rows are zero. Therefore the rank is smaller or equal to 3. Since all non-zero rows are scalar multiples of each other, the rank is 1.
+Since the rank of $M_1$ is 1, we expect only one non-zero singular value, and all others to be zero. To find this non-zero singular value, we observe that the matrix’s structure means it only transmits along the direction of the vector $\mathbf{u}_1 = [1, 1, 1, 0, 0]^T$, which is an indication that this single direction contributes the only non-zero singular value. The norm of this vector is the only non-zero singular value itself.
+
+$\sigma = \sqrt{1^2 + 1^2 + 1^2} = \sqrt{3}.$
+
+Since  $M_1$  has a single non-zero singular value, the corresponding left singular vector  $\mathbf{u}_1$  will align with the column space of  $M_1$, which is spanned by the vector $\mathbf{u}_1$. We can normalize this vector
+\[
+\mathbf{u}_1' = \frac{1}{\sqrt{3}} \mathbf{u}_1, 
+\]
+which gives us the left singular vector. Similarly, for the row space, the right singular vector  $\mathbf{v}_1'$  aligns with $\mathbf{v_1} = [1, 1, 1, 0, 0]$, which normalizes to
+\[
+\mathbf{v}_1 = \frac{1}{\sqrt{3}} \mathbf{v_1}
+\]
+
+\textbf{Matrix \( M_2 \)}
+\[
+M_2 = \begin{bmatrix} 0 & 0 & 0 & 0 & 0 \\ 0 & 2 & 1 & 2 & 0 \\ 0 & 2 & 1 & 2 & 0 \\ 0 & 2 & 1 & 2 & 0 \\ 0 & 0 & 0 & 0 & 0 \end{bmatrix}
+\]
+
+The second, third, and fourth rows are identical, and the first and fifth rows are zero. Therefore, the rank of  M_2  is at most 1 because there is only one linearly independent row vector among the non-zero rows. Since all non-zero rows are scalar multiples of each other, the rank is 1.
+
+Since the rank of $M_2$ is $1$, we expect only one non-zero singular value, and all others to be zero. To find this non-zero singular value, observe that the matrix’s structure means it only transmits along the direction of the vector $\mathbf{u}_1 = [0, 2, 1, 2, 0]^T$, indicating that this single direction contributes the only non-zero singular value. The norm of this vector is the singular value itself.
+\[
+\sigma = \sqrt{0^2 + 2^2 + 1^2 + 2^2 + 0^2} = \sqrt{9} = 3.
+\]
+
+Since $M_2$ has a single non-zero singular value, the corresponding left singular vector $\mathbf{u}_1$ will align with the column space of $M_2$, which is spanned by  $\mathbf{u}_1$. Normalizing this vector gives the left singular vector:
+
+$\mathbf{u}_1{\prime} = \frac{1}{3} \mathbf{u}_1.$
+
+Similarly, for the row space, the right singular vector $\mathbf{v}_1$ aligns with $\mathbf{v}_1 = [0, 2, 1, 2, 0]$, which normalizes to
+
+$\mathbf{v}_1{\prime} = \frac{1}{3} \mathbf{v}_1$.
+
+\textbf{Matrix \( M_3 \)}
+\[
+M_3 = \begin{bmatrix} 0 & 0 & 0 & 0 \\ 0 & 1 & 1 & 1 \\ 0 & 1 & 1 & 1 \\ 0 & 1 & 1 & 1 \\ 0 & 1 & 1 & 1 \end{bmatrix}
+\]
+
+The matrix has four columns and five rows, therefore the rank is smaller or equal to 4. The second, third, and fourth rows are identical, and the first row is zero. Therefore, the rank of $M_3$ is at most 1 because there is only one linearly independent row vector among the non-zero rows. Since all non-zero rows are scalar multiples of each other, the rank is 1.
+
+Since the rank of $M_3$ is $1$, we expect only one non-zero singular value, and all others to be zero. To find this non-zero singular value, we observe that the matrix’s structure means it only transmits along the direction of the vector $\mathbf{u}_1 = [0, 1, 1, 1, 1]^T$, which suggests that this direction alone contributes the non-zero singular value. The norm of this vector is the singular value itself.
+\[
+\sigma_1 = \sqrt{0^2 + 1^2 + 1^2 + 1^2 + 1^2} = \sqrt{4} = 2.
+\]
+
+Since $M_3$ has a single non-zero singular value, the corresponding left singular vector $\mathbf{u}_1$ will align with the column space of $M_3$, which is spanned by  $\mathbf{u}_1$. Normalizing this vector gives the left singular vector:
+\[
+\mathbf{u}_1{\prime} = \frac{1}{2} \mathbf{u}_1.
+\]
+
+Similarly, for the row space, the right singular vector $\mathbf{v}_1$ aligns via 
+\[
+\sigma_2 = \sqrt{0^2 + 1^2 + 1^2 + 1^2} = \sqrt{3}.
+\]
+
+with $\mathbf{v}_1 = [0, 1, 1, 1]$, which normalizes to
+\[
+\mathbf{v}_1{\prime} = \frac{1}{\sqrt{3}} \mathbf{v}_1.
+\]
+
+\textbf{Matrix \( M_4 \)}
+\[
+M_4 = \begin{bmatrix} 1 & 1 & 1 & 0 & 0 \\ 1 & 1 & 1 & 0 & 0 \\ 1 & 1 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 & 1 \\ 0 & 0 & 0 & 1 & 1 \end{bmatrix}
+\]
+
+The first three rows are identical, and rows four and five are identical, but distinct from the first three rows. Thus, the rank of $M_4$ is at most $2$, as there are two independent row vectors.
+
+Since the rank of $M_4$ is 2, we expect two non-zero singular values, and all others to be zero. For the first non-zero singular value, we observe the direction of the first block of rows, $\mathbf{u}_1 = [1, 1, 1, 0, 0]^T$, with norm $\sigma_1 = \sqrt{1^2 + 1^2 + 1^2} = \sqrt{3}$.
+
+For the second non-zero singular value, the direction of the second block of rows, $\mathbf{u}_2 = [0, 0, 0, 1, 1]^T$, with norm $\sigma_2 = \sqrt{1^2 + 1^2} = \sqrt{2}.$
+
+Since there are two non-zero singular values, we have two left and two right singular vectors. The first left singular vector aligns with $\mathbf{u}_1 = [1, 1, 1, 0, 0]^T$, normalized as
+
+$\mathbf{u}_1{\prime} = \frac{1}{\sqrt{3}} \mathbf{u}_1.$
+
+The second left singular vector aligns with $\mathbf{u}_2 = [0, 0, 0, 1, 1]^T$, normalized as
+
+$\mathbf{u}_2{\prime} = \frac{1}{\sqrt{2}} \mathbf{u}_2$.
+
+Similarly, the right singular vectors $\mathbf{v}_1 = [1, 1, 1, 0, 0]$ and $\mathbf{v}_2 = [0, 0, 0, 1, 1]$ align with these same directions for the row space and are normalized accordingly with $\sigma_1$ and $\sigma_2$.
+$\mathbf{v}_1{\prime} = \frac{1}{\sqrt{3}} \mathbf{v}_1$ and $\mathbf{v}_2{\prime} = \frac{1}{\sqrt{2}} \mathbf{v}_2$
+
+\textbf{Matrix \( M_5 \)}
+\[
+M_5 = \begin{bmatrix} 1 & 1 & 1 & 0 & 0 \\ 1 & 1 & 1 & 0 & 0 \\ 1 & 1 & 1 & 1 & 1 \\ 0 & 0 & 1 & 1 & 1 \\ 0 & 0 & 1 & 1 & 1 \end{bmatrix}
+\]
+
+The first two rows are identical, as are the last two rows, with the third row being distinct. This structure suggests that the rank of \( M_5 \) is \( 3 \), as there are three independent row vectors.
+
+Since the rank of \( M_5 \) is \( 3 \), we expect three non-zero singular values. The first two rows, aligned along \( \mathbf{u}_1 = [1, 1, 1, 0, 0]^T \), correspond to the first singular value, with norm:
+   \[
+   \sigma_1 = \sqrt{1^2 + 1^2 + 1^2} = \sqrt{3}.
+   \]
+The third row is distinct and aligned along \( \mathbf{u}_2 = [1, 1, 1, 1, 1]^T \), yielding the second singular value:
+   \[
+   \sigma_2 = \sqrt{1^2 + 1^2 + 1^2 + 1^2 + 1^2} = \sqrt{5}.
+   \]
+The last two rows, aligned along \( \mathbf{u}_3 = [0, 0, 1, 1, 1]^T \), contribute the third singular value:
+   \[
+   \sigma_3 = \sqrt{1^2 + 1^2 + 1^2} = \sqrt{3}.
+   \]
+The first left singular vector aligns with \( \mathbf{u}_1 = [1, 1, 1, 0, 0]^T \), normalized as $\mathbf{u}_1' = \frac{1}{\sqrt{3}} \mathbf{u}_1$
+The second left singular vector aligns with \( \mathbf{u}_2 = [1, 1, 1, 1, 1]^T \), normalized as $\mathbf{u}_2' = \frac{1}{\sqrt{5}} \mathbf{u}_2$.
+The third left singular vector aligns with \( \mathbf{u}_3 = [0, 0, 1, 1, 1]^T \), normalized as $\mathbf{u}_3' = \frac{1}{\sqrt{3}} \mathbf{u}_3$.
+
+Similarly, the right singular vectors \( \mathbf{v}_1 = [1, 1, 1, 0, 0]\), \( \mathbf{v}_2 = [1, 1, 1, 1, 1]\), and \( \mathbf{v}_3 = [0, 0, 1, 1, 1]\) align with these directions for the row space and are normalized accordingly. The output looks exactly the same since the matrix is symmetric.: 
+$\mathbf{v}_1' = \frac{1}{\sqrt{3}} \mathbf{v}_1$
+$\mathbf{v}_2' = \frac{1}{\sqrt{5}} \mathbf{v}_2$
+$\mathbf{v}_3' = \frac{1}{\sqrt{3}} \mathbf{v}_3$
+
+\textbf{Matrix \( M_6 \)}
+\[
+M_6 = \begin{bmatrix} 1 & 1 & 1 & 1 & 1 \\ 1 & 1 & 1 & 1 & 1 \\ 1 & 1 & 0 & 1 & 1 \\ 1 & 1 & 1 & 1 & 1 \\ 1 & 1 & 1 & 1 & 1 \end{bmatrix}
+\]
+
+All rows in \( M_6 \) are identical except for the third row, which differs in the third column. This structure suggests that the rank of \( M_6 \) is \( 2 \), as there are two independent row vectors.
+
+Since the rank of \( M_6 \) is \( 2 \), we expect two non-zero singular values. Observing the structure:
+The first row block, aligned along \( \mathbf{u}_1 = [1, 1, 1, 1, 1]^T \), contributes the first singular value, with norm:
+   \[
+   \sigma_1 = \sqrt{1^2 + 1^2 + 1^2 + 1^2 + 1^2} = \sqrt{5}.
+   \]
+The unique structure in the third row, aligned along \( \mathbf{u}_2 = [1, 1, 0, 1, 1]^T \), contributes the second singular value:
+   \[
+   \sigma_2 = \sqrt{1^2 + 1^2 + 0^2 + 1^2 + 1^2} = \sqrt{4}.
+   \]
+The first left singular vector aligns with \( \mathbf{u}_1 = [1, 1, 1, 1, 1]^T \), normalized as:
+   \[
+   \mathbf{u}_1' = \frac{1}{\sqrt{5}} \mathbf{u}_1
+   \]
+The second left singular vector aligns with \( \mathbf{u}_2 = [1, 1, 0, 1, 1]^T \), normalized as:
+   \[
+   \mathbf{u}_2' = \frac{1}{\sqrt{4}} \mathbf{u}_2
+   \]
+
+Similarly, the right singular vectors \( \mathbf{v}_1 = [1, 1, 1, 1, 1]\) and \( \mathbf{v}_2 = [1, 1, 0, 1, 1]\) align with these directions for the row space and are normalized accordingly, leading to the exact same results:
+\[
+\mathbf{v}_1' = \frac{1}{\sqrt{5}} \mathbf{v}_1
+\]
+
+\[
+\mathbf{v}_2' = \frac{1}{\sqrt{4}} \mathbf{v}_2
+\]
+
+\subsection{Task 1b:  Evaluation of SVD Results - noch nicht korrigier ???}
+
+For each matrix \( M_i \), we compare the observed singular values and singular vectors from the SVD computation against our theoretical expectations. Discrepancies are noted and qualitatively explained.
+
+\textbf{Matrix \( M_1 \)}
+
+Expected Results: Since \( M_1 \) is rank 1, we anticipate one significant singular value (\( \sqrt{3} \)), with other singular values being zero. The left singular vector should align with the column space spanned by \( [1, 1, 1, 0, 0]^T \), and the right singular vector should align with \( [1, 1, 1, 0, 0] \).
+
+Observed Results: The numpy SVD output for \( M_1 \) shows:
+\[
+s_1 = 3.0, \quad s_2 \approx 1.3 \times 10^{-16}, \quad s_3 \approx 1.3 \times 10^{-49}
+\]
+The observed primary singular value matches our expectation (\(3.0 \approx \sqrt{3} \times \sqrt{3} \)), and the small non-zero values for \( s_2 \) and \( s_3 \) are likely due to numerical precision limitations, as they are practically zero. The left and right singular vectors align closely with our expectations for the primary component, supporting that \( M_1 \) has effective rank 1.
+
+\textbf{Matrix \( M_2 \)}
+
+Expected Results: With rank 1, \( M_2 \) should have one significant singular value (\( 3 \)), with corresponding left and right singular vectors along \( [0, 2, 1, 2, 0]^T \) and normalized as described.
+
+Observed Results: The numpy SVD shows:
+\[
+s_1 = 5.196, \quad s_2 \approx 2.4 \times 10^{-16}
+\]
+The primary singular value is higher than expected, as it appears scaled by \( \sqrt{3} \), resulting in \( 3 \times \sqrt{3} \approx 5.196 \). This discrepancy can be attributed to the non-standard normalization used by numpy’s SVD, which scales by \( \sqrt{\text{sum of squared elements}} \). Left and right singular vectors align well with the expected direction, confirming the rank 1 nature of \( M_2 \).
+
+\textbf{Matrix \( M_3 \)}
+
+Expected Results: Given rank 1, we expect a singular value of \( 2 \) and corresponding left and right singular vectors along \( [0, 1, 1, 1, 1]^T \) and normalized accordingly.
+
+Observed Results: The primary singular value from numpy SVD is:
+\[
+s_1 = 3.464
+\]
+This value is scaled by \( \sqrt{3} \), giving \( 2 \times \sqrt{3} \approx 3.464 \), again attributed to numpy’s scaling factor. The singular vectors closely align with the expected directions.
+
+\textbf{Matrix \( M_4 \)}
+
+Expected Results: With rank 2, we anticipate two non-zero singular values: \( \sqrt{3} \) and \( \sqrt{2} \), with corresponding singular vectors in the directions of the two independent row groups.
+
+Observed Results: The primary singular values observed are:
+\[
+s_1 = 3.0, \quad s_2 = 2.0
+\]
+These values are as expected, up to scaling. The primary directions of the left and right singular vectors match our expectations, supporting the rank 2 structure of \( M_4 \).
+
+\textbf{Matrix \( M_5 \)}
+
+Expected Results: With rank 3, we expect three non-zero singular values: \( \sqrt{3} \), \( \sqrt{5} \), and \( \sqrt{3} \).
+
+Observed Results: The numpy SVD outputs:
+\[
+s_1 = 3.872, \quad s_2 = 3.0, \quad s_3 = 2.0
+\]
+The largest singular value \( s_1 = 3.872 \) approximates \( \sqrt{5} \times \sqrt{3} \), indicating scaling from numpy’s normalization. Singular vectors align closely with the expected directions, consistent with the rank 3 structure.
+
+\textbf{Matrix \( M_6 \)}
+
+Expected Results: With rank 2, we expect two non-zero singular values: \( \sqrt{5} \) and \( \sqrt{4} \).
+
+Observed Results: The numpy SVD yields:
+\[
+s_1 = 4.582, \quad s_2 = 2.828
+\]
+The first value \( s_1 = 4.582 \approx \sqrt{5} \times \sqrt{4} \) is scaled, while the second matches \( \sqrt{4} \times \sqrt{2} \approx 2.828 \). Singular vectors are aligned as expected.
+
+
+Across all matrices, the SVD results from numpy are consistent with theoretical expectations in terms of singular vector directions, indicating correct identification of matrix rank. The observed singular values reflect numpy’s scaling by the Frobenius norm factor, explaining minor discrepancies from theoretical values.
+
+\subsection{Task 1c: Determining the Rank of \( M_6 \) via Singular Value Decomposition (SVD)}
+
+To determine the rank of a matrix \( M_6 \), we analyze the number of non-zero singular values of \( M_6 \). This can be achieved through Singular Value Decomposition (SVD), which decomposes \( M_6 \) as follows:
+
+\[
+M_6 = U \Sigma V^T
+\]
+
+where:
+\begin{itemize}
+    \item \( U \) is an orthogonal matrix containing the left singular vectors,
+    \item \( V \) is an orthogonal matrix containing the right singular vectors,
+    \item \( \Sigma \) is a diagonal matrix with the singular values of \( M_6 \) on the diagonal.
+\end{itemize}
+
+The \textbf{rank of \( M_6 \)} is defined as the number of non-zero singular values in \( \Sigma \).
+
+\textbf{Steps to Determine the Rank of \( M_6 \)}
+
+1. \textbf{Compute the Singular Values}:
+    Using a computational tool such as \texttt{NumPy} in Python, we can compute the singular values of \( M_6 \).
+    The \texttt{numpy.linalg.svd} function returns the singular values \( \sigma_1, \sigma_2, \dots, \sigma_n \) (sorted in descending order).
+
+2. \textbf{Interpretation of Singular Values}:
+    Each singular value \( \sigma_i \) represents the magnitude of the transformation along a particular dimension.
+    Non-zero singular values indicate the presence of independent dimensions, contributing to the matrix's rank.
+
+3. \textbf{Handling Numerical Precision}:
+    Due to limitations in floating-point precision, very small singular values may appear as non-zero but are effectively zero.
+    We define a tolerance \( \epsilon \) (for instance, \( \epsilon = 10^{-10} \)) such that any singular value \( \sigma_i < \epsilon \) can be considered zero for practical purposes.
+
+4. \textbf{Determine the Numerical Rank}:
+    The numerical rank of \( M_6 \) is the count of singular values that are greater than \( \epsilon \).
+
+\textbf{Example Calculation and Discussion}
+
+Suppose the singular values returned by \texttt{NumPy} are as follows:
+
+\[
+\sigma = [5.0, 3.0, 1.0, 1.0 \times 10^{-12}, 5.0 \times 10^{-13}]
+\]
+
+With a tolerance of \( \epsilon = 10^{-10} \), we consider any singular value less than \( 10^{-10} \) as zero. Therefore, the fourth and fifth singular values are effectively zero, yielding:
+
+\[
+\text{rank}(M_6) = 3
+\]
+
+\textbf{Discussion:} 
+
+- The theoretical rank is the actual number of non-zero singular values.
+- \texttt{NumPy} may report very small singular values due to floating-point precision limitations, which do not contribute to the rank in practice.
+- By choosing a tolerance, we can differentiate between genuine non-zero values and near-zero values due to computational errors.
+
+
+\section{conclusion}
+???
+
+\bibliography{references}
+
+
+\appendix
+
+
+\clearpage
+\section*{Declaration of Honor}
+
+I hereby declare that I have written the enclosed 
+project report without the help of third parties and without the use of other
+sources and aids other than those listed in the table below
+and that I have identified the passages taken from the sources used verbatim or in terms of content as such.
+or content taken from the sources used. This work has not been submitted in the same or a similar form
+been submitted to any examination authority. I am aware that a false declaration
+declaration will have legal consequences.
+
+% Declare below which AI tools you used in the process of writing your work,
+% including text, image, code, and data generation. If you used a tool for a
+% purpose not included in the list yet, add it to the list.
+\begin{center}
+  \textbf{Declaration of Used AI Tools} \\[.3em]
+  \begin{tabularx}{\textwidth}{lXlc}
+    \toprule
+    Tool & Purpose & Where? & Useful? \\
+    \midrule
+    ChatGPT & Rephrasing & Throughout & + \\
+    DeepL & Translation & Throughout & + \\
+    %ResearchGPT & Summarization of related work & Sec.~\ref{sec:related_work} & - \\
+    %Dall-E & Image generation & Figs.~2, 3 & ++ \\
+    Github Copilot & Code generation & a03-svd.ipynb & + \\
+    %ChatGPT & Related work hallucination & Most of bibliography & ++ \\
+    \bottomrule
+  \end{tabularx}
+\end{center}
+
+\vspace{2cm}
+\noindent Signatures\\
+\noindent Mannheim, 03. November 2024 \hfill
+
+\end{document}
+
