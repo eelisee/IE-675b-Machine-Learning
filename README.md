@@ -23,7 +23,11 @@ This report explores the implementation and evaluation of a logistic regression 
 
 ## Assignment 3: Singular Value Decomposition (SVD) on World 
 
-In this assignment, we delve into the application of Singular Value Decomposition (SVD) for dimensionality reduction and latent feature extraction. The dataset used comprises a collection of movie ratings, where users have rated various movies on a scale from 1 to 5. The goal is to predict missing ratings and uncover underlying patterns in user preferences and movie characteristics.
+In this assignment, we delve into the application of Singular Value Decomposition (SVD) for dimensionality reduction and latent feature extraction. The dataset used comprises climatic variables from 50km x 50km squares across Europe. The goal is to normalize the climate data to z-scores, compute its SVD, and interpret spatial patterns using longitude and latitude coordinates.
+
+We manually estimated the rank and singular values of matrices and compared them with computed SVD results. Different rank selection methods were evaluated to determine the optimal size for truncated SVD. Additionally, we analyzed the impact of Gaussian noise on the RMSE of truncated SVD reconstructions, providing insights into the robustness of the SVD approach in handling noisy data.
+
+More information can be found at [WorldClim Dataset](https://www.worldclim.org/).
 
 - **worldclim.csv**: 2575 x 48 dense matrix in CSV format (2575 lines, each with 48 comma-separated numbers). The columns correspond to bioclimatic variables (see below).
 - **worldclim-coordinates.csv**: 2572 x 2 dense matrix in the same format as worldclim.csv. The first column is the longitude and the second column the latitude of each row in worldclim.csv.
